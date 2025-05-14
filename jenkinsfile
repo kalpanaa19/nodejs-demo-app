@@ -1,0 +1,51 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = 'yourdockerhubusername/your-app-name'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building Docker Image...'
+                sh 'docker build -t $IMAGE_NAME .'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running Tests...'
+                // Add test command if you have, e.g., npm test
+                sh 'echo "No tests implemented yet."'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Pushing Docker Image to DockerHub...'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push $IMAGE_NAME
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline executed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
+    }
+}
